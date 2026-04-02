@@ -141,6 +141,9 @@ project/
 - Keep all paths in English — Cyrillic or special characters in paths can cause SteamCMD to fail.
 - Install SteamCMD in its default location to avoid manual path configuration.
 
+### To do list
+- A new file that has special functionality for some games (for example: auto-sorting and applying a modlist before the launch of the Rimworld itself)
+
 ### License
 
 [MIT](LICENSE) — do whatever you want with it.
@@ -273,6 +276,9 @@ build.bat
 
 - Держите все пути на английском языке — кириллица и спецсимволы в путях могут привести к ошибкам SteamCMD.
 - Устанавливайте SteamCMD в стандартное расположение, чтобы не настраивать путь вручную.
+
+### Сдэлат Лист
+- Новый файлик, чтоби биль особый функционал для некоторых игр (например: автосортировка и применение модлиста до запуска самого Rimworld)
 
 ### Лицензия
 
