@@ -7,6 +7,7 @@
 ![Python](https://img.shields.io/badge/Python-3.8+-blue.svg)
 ![Flask](https://img.shields.io/badge/Flask-3.x-green.svg)
 ![License](https://img.shields.io/badge/license-MIT-yellow.svg)
+[![Discord](https://img.shields.io/badge/Discord-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/2xswqkTS3Q)
 
 ---
 
