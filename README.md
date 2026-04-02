@@ -30,7 +30,11 @@
 - Trash bin — deleted mods can be restored
 - Workshop Browser — a separate companion window for browsing and adding mods without leaving the app
 
-### Installation
+### Installation 
+Download VSE_v1.0_release.rar, the VSE.exe is there, and you are good to go. 
+https://github.com/gmm89m/Vanilla-SteamCMD-Expanded/releases/tag/VSE
+
+### Installation (Via Source code)
 
 **Prerequisites:** Python 3.8+, SteamCMD installed and accessible.
 
@@ -159,7 +163,11 @@ project/
 - Корзина — удалённые моды можно восстановить
 - Workshop Browser — отдельное окно для просмотра и добавления модов прямо из интерфейса
 
-### Установка
+### Установка 
+Скачай VSE_v1.0_release.rar, VSE.exe там, и можешь пользоваться. 
+https://github.com/gmm89m/Vanilla-SteamCMD-Expanded/releases/tag/VSE
+
+### Установка (Через исходники)
 
 **Требования:** Python 3.8+, установленный SteamCMD.
 
