@@ -1,0 +1,1145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Vanilla SteamCMD Expanded</title>
+<style>
+/* ── Reset & Variables ─────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:      #0f0f17;
+  --bg2:     #16161f;
+  --bg3:     #1e1e2e;
+  --bg4:     #252535;
+  --border:  #2a2a40;
+  --accent:  #4a7fd4;
+  --green:   #1e4a1e;  --green2:  #4CAF50;
+  --orange:  #4a2800;  --orange2: #FF9800;
+  --red:     #4a1a1a;  --red2:    #e05555;
+  --text:    #e0e0e0;  --text2:   #aaa;  --text3: #555;
+}
+
+/* ── Layout ────────────────────────────────────────────────────────────── */
+body {
+  background: var(--bg); color: var(--text);
+  font: 14px/1.5 "Segoe UI", system-ui, sans-serif;
+  display: flex; height: 100vh; overflow: hidden;
+}
+#sidebar {
+  width: 180px; background: var(--bg2);
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column; padding: 14px 8px; flex-shrink: 0;
+}
+#main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+/* ── Sidebar ───────────────────────────────────────────────────────────── */
+.logo { text-align: center; padding: 10px 0 18px; }
+.logo-title { font-size: 17px; font-weight: 700; }
+.logo-sub   { font-size: 10px; color: var(--text3); margin-top: 2px; }
+
+.nav-btn {
+  display: flex; align-items: center; gap: 8px;
+  width: 100%; padding: 9px 14px;
+  border: none; background: transparent; color: var(--text2);
+  border-radius: 6px; cursor: pointer; font-size: 13px; text-align: left;
+  transition: background .12s, color .12s;
+}
+.nav-btn:hover  { background: var(--bg3); color: var(--text); }
+.nav-btn.active { background: var(--bg4); color: var(--text); font-weight: 600; }
+
+.sep { height: 1px; background: var(--border); margin: 10px 4px; }
+
+#status-line {
+  margin-top: auto; padding: 8px 12px;
+  font-size: 11px; color: var(--green2);
+  display: flex; align-items: center; gap: 6px;
+}
+#status-dot  { width: 7px; height: 7px; border-radius: 50%; background: var(--green2); flex-shrink: 0; }
+#spinner     {
+  display: none; width: 12px; height: 12px;
+  border: 2px solid var(--border); border-top-color: var(--accent);
+  border-radius: 50%; animation: spin .7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Pages ─────────────────────────────────────────────────────────────── */
+.page {
+  display: none; flex-direction: column;
+  height: 100%; padding: 18px 20px 14px; gap: 10px; overflow: hidden;
+}
+.page.active { display: flex; }
+
+/* ── Page header ───────────────────────────────────────────────────────── */
+.ph { display: flex; align-items: center; gap: 6px; flex-shrink: 0; flex-wrap: wrap; }
+.ph h1 { font-size: 20px; font-weight: 700; flex: 1; }
+
+/* ── Buttons ───────────────────────────────────────────────────────────── */
+.btn {
+  padding: 6px 13px; border: none; border-radius: 6px;
+  cursor: pointer; font-size: 12px; font-weight: 500;
+  white-space: nowrap; transition: opacity .12s;
+}
+.btn:hover    { opacity: .82; }
+.btn:disabled { opacity: .4; cursor: not-allowed; }
+.btn-p  { background: var(--accent);  color: #fff; }
+.btn-g  { background: var(--green);   color: var(--green2); }
+.btn-r  { background: var(--red);     color: var(--red2); }
+.btn-o  { background: var(--orange);  color: var(--orange2); }
+.btn-gh { background: transparent; border: 1px solid var(--border); color: var(--text2); }
+.btn-gh:hover { background: var(--bg3); color: var(--text); }
+.btn-pu { background: #2e1f4a; color: #b39ddb; }
+.btn-t  { background: #133020; color: #4db6ac; }
+.btn-sm { padding: 4px 9px; font-size: 11px; }
+
+/* ── Filter row ────────────────────────────────────────────────────────── */
+.fr { display: flex; align-items: center; gap: 6px; flex-shrink: 0; flex-wrap: wrap; }
+.fr > input { flex: 1; min-width: 160px; }
+
+/* ── Inputs ────────────────────────────────────────────────────────────── */
+input[type=text] {
+  background: var(--bg3); border: 1px solid var(--border);
+  color: var(--text); border-radius: 6px; padding: 6px 11px; font-size: 13px; outline: none;
+  transition: border .12s;
+}
+input[type=text]:focus { border-color: var(--accent); }
+input::placeholder     { color: var(--text3); }
+input[type=checkbox]   { accent-color: var(--accent); width: 14px; height: 14px; cursor: pointer; }
+textarea {
+  background: var(--bg3); border: 1px solid var(--border);
+  color: var(--text); border-radius: 6px; padding: 8px 11px;
+  font: 12px "Courier New", monospace; resize: vertical; outline: none; width: 100%;
+}
+textarea:focus { border-color: var(--accent); }
+select {
+  background: var(--bg3); border: 1px solid var(--border);
+  color: var(--text); border-radius: 6px; padding: 5px 9px; font-size: 13px; outline: none;
+  cursor: pointer;
+}
+select:focus { border-color: var(--accent); }
+
+/* ── Mod list ──────────────────────────────────────────────────────────── */
+.lw {
+  flex: 1; overflow-y: auto;
+  border-radius: 8px; background: var(--bg2); border: 1px solid var(--border);
+}
+.empty { padding: 44px; text-align: center; color: var(--text3); font-size: 13px; }
+
+/* Section headers inside mod list */
+.section-hdr {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 14px; font-size: 10px; font-weight: 700; letter-spacing: .6px;
+  text-transform: uppercase; color: var(--green2);
+  background: var(--bg2); border-bottom: 1px solid var(--border);
+  position: sticky; top: 0; z-index: 1;
+}
+.section-hdr-q   { color: var(--text3); }
+.section-hdr-upd { color: var(--orange2); }
+.section-cnt {
+  background: var(--bg4); color: var(--text3);
+  font-size: 10px; padding: 1px 6px; border-radius: 10px;
+}
+/* Section select/deselect buttons — same style as .btn-gh.btn-sm near the search bar */
+.section-sel-btn {
+  padding: 4px 9px; border: 1px solid var(--border); border-radius: 6px;
+  background: transparent; color: var(--text2); cursor: pointer;
+  font-size: 11px; font-weight: 500; white-space: nowrap;
+  transition: background .12s, color .12s; margin-left: 4px;
+}
+.section-sel-btn:hover { background: var(--bg3); color: var(--text); }
+
+/* Section collapse */
+.section-toggle {
+  font-size: 9px; color: var(--text3); cursor: pointer;
+  padding: 2px 6px 2px 0; transition: color .12s; user-select: none;
+}
+.section-hdr:hover .section-toggle { color: var(--text2); }
+.section-lbl { user-select: none; }
+
+.section-rows-installed,
+.section-rows-queued {
+  overflow: hidden;
+  max-height: 9999px;                     /* large enough to never clip */
+  transition: max-height .22s ease, opacity .18s ease;
+  opacity: 1;
+}
+.section-hidden {
+  max-height: 0 !important;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.mr {
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 12px; border-bottom: 1px solid var(--border);
+  transition: background .1s; min-height: 50px;
+}
+.mr:last-child { border-bottom: none; }
+.mr:hover      { background: var(--bg3); }
+.mr input[type=checkbox] { width: 15px; height: 15px; flex-shrink: 0; }
+
+.mi  { flex: 1; min-width: 0; }
+.mn  { font-weight: 600; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mm  { font-size: 10px; color: var(--text3); }
+
+.badge { font-size: 10px; padding: 2px 8px; border-radius: 4px; white-space: nowrap; flex-shrink: 0; font-weight: 500; }
+.b-ok   { background: var(--green);  color: var(--green2); }
+.b-upd  { background: var(--orange); color: var(--orange2); }
+.b-miss { background: #1a1a1a;       color: var(--text3); }
+
+.ib {
+  background: transparent; border: none; cursor: pointer; font-size: 13px;
+  padding: 4px 6px; border-radius: 4px; color: var(--text3); flex-shrink: 0;
+  transition: background .1s;
+}
+.ib:hover     { background: var(--bg4); color: var(--text2); }
+.ib.del:hover { background: var(--red); color: var(--red2); }
+.ib[disabled] { cursor: default; }
+
+/* ── Log console ───────────────────────────────────────────────────────── */
+#log-box {
+  background: #080810; border: 1px solid var(--border); border-radius: 6px;
+  padding: 7px 10px; font: 11px/1.6 "Courier New", monospace;
+  color: #7fbf7f; overflow-y: auto; flex-shrink: 0;
+  white-space: pre-wrap; word-break: break-all; max-height: 110px;
+}
+
+/* ── Settings ──────────────────────────────────────────────────────────── */
+.sb  { flex: 1; overflow-y: auto; }
+.sf  { max-width: 620px; display: flex; flex-direction: column; gap: 16px; padding-bottom: 20px; }
+.fg  { display: flex; flex-direction: column; gap: 5px; }
+.fg label { font-size: 11px; color: var(--text2); font-weight: 600; text-transform: uppercase; letter-spacing: .4px; }
+.frow { display: flex; gap: 7px; align-items: center; }
+.frow input { flex: 1; }
+.cr  { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+.ib2 { background: var(--bg3); border-radius: 6px; padding: 11px 15px; font-size: 12px; color: var(--text2); line-height: 1.9; border-left: 3px solid var(--accent); }
+
+/* ── Trash ─────────────────────────────────────────────────────────────── */
+.tr { display: flex; align-items: center; gap: 8px; padding: 7px 12px; border-bottom: 1px solid var(--border); transition: background .1s; }
+.tr:last-child { border-bottom: none; }
+.tr:hover      { background: var(--bg3); }
+
+/* ── Modals ────────────────────────────────────────────────────────────── */
+.mo {
+  position: fixed; inset: 0; background: #000b; z-index: 300;
+  display: none; align-items: center; justify-content: center;
+}
+.mo.open { display: flex; }
+.md {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 12px; padding: 22px;
+  min-width: 420px; max-width: 520px; max-height: 82vh; overflow-y: auto;
+  display: flex; flex-direction: column; gap: 12px;
+}
+.md h2  { font-size: 15px; font-weight: 700; }
+.mdf    { display: flex; gap: 7px; justify-content: flex-end; margin-top: 2px; }
+
+
+/* ── Guide modal ───────────────────────────────────────────────────────── */
+.md-guide {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 12px; padding: 24px;
+  min-width: 480px; max-width: 600px; max-height: 82vh; overflow-y: auto;
+  display: flex; flex-direction: column; gap: 16px;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+}
+.md-guide h2 { font-size: 16px; font-weight: 700; }
+.guide-section { display: flex; flex-direction: column; gap: 8px; }
+.guide-section h3 {
+  font-size: 12px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .5px; color: var(--accent); margin-bottom: 2px;
+}
+.guide-steps { display: flex; flex-direction: column; gap: 6px; }
+.guide-step {
+  display: flex; gap: 10px; align-items: flex-start;
+  font-size: 13px; color: var(--text2); line-height: 1.5;
+}
+.guide-step-num {
+  min-width: 22px; height: 22px; border-radius: 50%;
+  background: var(--bg4); color: var(--accent);
+  font-size: 11px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; margin-top: 1px;
+}
+.guide-step b { color: var(--text); }
+.guide-tip {
+  background: var(--bg3); border-left: 3px solid var(--orange2);
+  border-radius: 4px; padding: 8px 12px;
+  font-size: 12px; color: var(--text2); line-height: 1.6;
+}
+
+/* ── Lite badge ────────────────────────────────────────────────────────── */
+.lite-tag {
+  font-size: 9px; font-weight: 700; letter-spacing: .6px;
+  background: #2e1f4a; color: #b39ddb; padding: 2px 6px; border-radius: 4px;
+}
+
+/* ── Scrollbar ─────────────────────────────────────────────────────────── */
+::-webkit-scrollbar       { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #3a3a5a; }
+
+/* ── Delete confirm modal ──────────────────────────────────────────────── */
+.del-name  { color: var(--red2); font-weight: 700; }
+.del-count { color: var(--red2); font-weight: 700; margin-left: 4px; }
+.mr.del-pending { background: rgba(224,85,85,0.10); }
+.mr.del-pending .mn { color: var(--red2); }
+
+/* ── First-run wizard ──────────────────────────────────────────────────── */
+.wizard-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,.72);
+  z-index: 500; display: flex; align-items: center; justify-content: center;
+}
+.wizard-box {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 14px; padding: 32px 30px 24px;
+  width: 480px; max-width: 96vw;
+  display: flex; flex-direction: column; gap: 20px;
+  box-shadow: 0 12px 48px rgba(0,0,0,.6);
+}
+.wizard-head { display: flex; flex-direction: column; gap: 4px; }
+.wizard-title { font-size: 18px; font-weight: 700; }
+.wizard-step-lbl { font-size: 11px; color: var(--text3); letter-spacing: .4px; }
+.wizard-progress { display: flex; gap: 5px; align-items: center; }
+.wizard-pip { height: 3px; flex: 1; border-radius: 2px; background: var(--border); transition: background .25s; }
+.wizard-pip.done   { background: var(--accent); }
+.wizard-pip.active { background: var(--green2); }
+.wizard-body { display: flex; flex-direction: column; gap: 14px; min-height: 140px; }
+.wizard-subtitle { font-size: 12px; color: var(--text2); line-height: 1.6; }
+.wizard-foot { display: flex; gap: 8px; justify-content: flex-end; align-items: center; }
+.wizard-foot-skip { margin-right: auto; }
+.wizard-opts { display: flex; flex-direction: column; gap: 8px; max-height: 40vh; overflow-y: auto; padding-right: 4px; }
+.wizard-opt {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 14px; border-radius: 8px;
+  border: 1px solid var(--border); cursor: pointer;
+  transition: border-color .15s, background .15s; font-size: 13px;
+}
+.wizard-opt:hover { border-color: var(--accent); background: var(--bg3); }
+.wizard-opt input[type=radio] { accent-color: var(--accent); width: 15px; height: 15px; }
+.wizard-opt.selected { border-color: var(--accent); background: var(--bg3); }
+
+/* ── Compact mode ──────────────────────────────────────────────────────── */
+body.compact .ph .btn > span[data-i18n],
+body.compact .ph .btn > span:not([style]) { display: none; }
+body.compact .ph .btn[title="Help / Guide"] { font-size: 15px; padding: 4px 8px; }
+body.compact #sidebar { width: 52px; padding: 14px 4px; align-items: center; }
+body.compact .logo-title, body.compact .logo-sub { display: none; }
+body.compact .logo { padding: 4px 0 10px; }
+body.compact .nav-btn { justify-content: center; padding: 9px 6px; font-size: 16px; }
+body.compact .nav-btn > span[data-i18n] { display: none; }
+body.compact #status-text { display: none; }
+body.compact #status-line { justify-content: center; padding: 8px 0; }
+body.compact .page { padding: 12px 10px 10px; }
+body.compact .fr > input { min-width: 80px; }
+body.compact #profile-bar { padding: 0 2px 6px; }
+body.compact #profile-bar select { display: none; }
+body.compact #profile-bar button { width: 100%; }
+
+
+/* ── Warning banner ────────────────────────────────────────────────────── */
+#warn-banner {
+  display: none;
+  background: #2a1500; border-bottom: 1px solid var(--orange2);
+  color: var(--orange2); font-size: 12px;
+  padding: 7px 16px; gap: 10px; align-items: center;
+  flex-shrink: 0; cursor: pointer;
+}
+#warn-banner:hover { background: #3a1f00; }
+#warn-banner.visible { display: flex; }
+#warn-banner .warn-icon { font-size: 15px; flex-shrink: 0; }
+#warn-banner .warn-msg  { flex: 1; }
+#warn-banner .warn-link { text-decoration: underline; white-space: nowrap; }
+
+
+/* ── Profile edit modal ────────────────────────────────────────────────── */
+.md-profile { min-width: 380px; max-width: 460px; }
+.md-profile .fg { display: flex; flex-direction: column; gap: 5px; }
+.md-profile .fg label {
+  font-size: 11px; color: var(--text2); font-weight: 600;
+  text-transform: uppercase; letter-spacing: .4px;
+}
+.md-profile .app-hint {
+  font-size: 11px; min-height: 15px; margin-top: 2px;
+}
+
+
+/* ── Profile edit modal ────────────────────────────────────────────────── */
+.md-profile { min-width: 380px; max-width: 460px; }
+
+/* ── Download progress bar ──────────────────────────────────────────────── */
+#dl-bar-wrap {
+  display: none; align-items: center; gap: 10px;
+  padding: 6px 12px; background: var(--bg2);
+  border: 1px solid var(--border); border-radius: 6px; flex-shrink: 0;
+}
+#dl-bar-track {
+  flex: 1; height: 6px; background: var(--border); border-radius: 3px; overflow: hidden;
+}
+#dl-bar-fill {
+  height: 100%; width: 0%; background: var(--accent);
+  border-radius: 3px; transition: width .4s ease;
+}
+#dl-bar-count {
+  font-size: 12px; color: var(--text2); white-space: nowrap; min-width: 50px; text-align: right;
+}
+
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════ SIDEBAR -->
+<nav id="sidebar">
+  <div class="logo">
+    <div class="logo-title">⚙ VSE</div>
+    <div class="logo-sub" style="font-size:9px;color:var(--text3);letter-spacing:.4px">VANILLA STEAMCMD EXPANDED</div>
+  </div>
+
+  <div id="profile-bar" style="padding:0 4px 6px;display:flex;gap:4px;align-items:center">
+    <select id="profile-select" onchange="switchProfile(this.value)"
+      style="flex:1;font-size:11px;padding:4px 6px;min-width:0;background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:5px"></select>
+    <button class="btn btn-gh" onclick="startWizard('profile')"
+      style="padding:3px 7px;font-size:13px;flex-shrink:0" title="Add game">&#65291;</button>
+  </div>
+
+  <button class="nav-btn active" data-page="mods"     title="Mods">📦 <span data-i18n="nav_mods">Mods</span></button>
+  <button class="nav-btn"        data-page="trash"    title="Trash">🗑 <span data-i18n="nav_trash">Trash</span></button>
+  <button class="nav-btn"        data-page="settings" title="Settings">⚙ <span data-i18n="nav_settings">Settings</span></button>
+
+  <div class="sep"></div>
+  <div id="status-line">
+    <div id="spinner"></div>
+    <div id="status-dot"></div>
+    <span id="status-text" data-i18n="status_ready">Ready</span>
+  </div>
+</nav>
+
+<!-- ═══════════════════════════════════════════════════════ MAIN -->
+<div id="main">
+  <div id="warn-banner" onclick="document.querySelector('[data-page=settings]').click()">
+    <span class="warn-icon">⚠️</span>
+    <span class="warn-msg" id="warn-msg"></span>
+    <span class="warn-link" data-i18n="warn_go_settings">Go to Settings</span>
+  </div>
+
+  <!-- ── MODS ───────────────────────────────────────────────────── -->
+  <div class="page active" id="page-mods">
+
+    <div class="ph">
+      <h1>📦 <span data-i18n="nav_mods">Mods</span></h1>
+      <button class="btn btn-t  btn-sm" onclick="checkUpdates()"
+        title="Scope: selected mods or all if none selected">
+        🔄 <span data-i18n="btn_check_updates">Check Updates</span>
+      </button>
+      <button class="btn btn-g  btn-sm" onclick="downloadSelected()">
+        ⬇ <span data-i18n="btn_download">Download</span>
+      </button>
+      <button class="btn btn-t  btn-sm" onclick="detectMods()" title="Detect Installed Mods">
+        🔍 <span data-i18n="btn_detect">Detect</span>
+      </button>
+      <button class="btn btn-pu btn-sm" onclick="openWorkshop()">
+        🌐 <span data-i18n="btn_workshop">Workshop Browser</span>
+      </button>
+      <button class="btn btn-p  btn-sm" onclick="openAddModal()">
+        <span data-i18n="btn_add_mod">+ Add Mod</span>
+      </button>
+      <button class="btn btn-pu btn-sm" onclick="exportList()">
+        📤 <span data-i18n="btn_export">Export</span>
+      </button>
+      <button class="btn btn-pu btn-sm" onclick="importList()">
+        📥 <span data-i18n="btn_import">Import</span>
+      </button>
+      <button class="btn btn-gh btn-sm" onclick="openM('m-guide')" title="Help / Guide" style="margin-left:auto;font-size:15px;padding:4px 10px">❓</button>
+    </div>
+
+    <div class="fr">
+      <input type="text" id="si" data-i18n="search_placeholder" placeholder="Search mods…" oninput="renderMods()">
+      <button class="btn btn-gh btn-sm" onclick="selAll(true)">☑ <span data-i18n="btn_sel_all">All</span></button>
+      <button class="btn btn-gh btn-sm" onclick="selAll(false)">☐ <span data-i18n="btn_sel_none">None</span></button>
+      <button class="btn btn-r  btn-sm" onclick="delSelected()">🗑 <span data-i18n="btn_delete">Delete</span></button>
+    </div>
+
+    <div class="lw" id="mod-list"><div class="empty" data-i18n="mod_list_empty">Loading…</div></div>
+
+    <!-- ── Download progress bar ─────────────────────────────────── -->
+    <div id="dl-bar-wrap">
+      <span style="font-size:12px;color:var(--text2);white-space:nowrap" data-i18n="dl_bar_label">Downloading</span>
+      <div id="dl-bar-track"><div id="dl-bar-fill"></div></div>
+      <span id="dl-bar-count">0 / 0</span>
+      <button class="btn btn-r btn-sm" onclick="stopCurrentDownload()" style="flex-shrink:0">✕ <span data-i18n="dl_bar_stop">Stop</span></button>
+    </div>
+
+    <div id="log-box"></div>
+
+  </div>
+
+  <!-- ── TRASH ──────────────────────────────────────────────────── -->
+  <div class="page" id="page-trash">
+    <div class="ph">
+      <h1>🗑 <span data-i18n="trash_title">Trash</span></h1>
+      <button class="btn btn-gh btn-sm" onclick="tSelAll(true)">☑ <span data-i18n="btn_sel_all">All</span></button>
+      <button class="btn btn-gh btn-sm" onclick="tSelAll(false)">☐ <span data-i18n="btn_sel_none">None</span></button>
+      <button class="btn btn-p  btn-sm" onclick="tBulk('restore')">↩ <span data-i18n="btn_restore">Restore</span></button>
+      <button class="btn btn-r  btn-sm" onclick="tBulk('delete')">✕ <span data-i18n="btn_delete_perm">Delete</span></button>
+    </div>
+    <div class="fr">
+      <input type="text" id="trash-search" data-i18n="trash_search_ph" placeholder="Search trash…" oninput="renderTrash()">
+    </div>
+    <div class="lw" id="trash-list"></div>
+  </div>
+
+  <!-- ── SETTINGS ───────────────────────────────────────────────── -->
+  <div class="page" id="page-settings">
+    <div class="ph"><h1>⚙ <span data-i18n="settings_title">Settings</span></h1></div>
+    <div class="sb"><div class="sf">
+
+      <div class="fg">
+        <label data-i18n="settings_steamcmd">SteamCMD executable</label>
+        <div class="frow">
+          <input type="text" id="c-scmd" data-i18n="settings_steamcmd_ph" placeholder="C:/SteamCMD/steamcmd.exe">
+          <button class="btn btn-gh btn-sm" onclick="bFile('c-scmd', 'Select steamcmd.exe')">
+            <span data-i18n="settings_browse">Browse…</span>
+          </button>
+          <button class="btn btn-o btn-sm" onclick="reinstallSteamcmd()" id="btn-reinstall-scmd">
+            🔄 <span data-i18n="btn_reinstall_steamcmd">Reinstall / Update</span>
+          </button>
+        </div>
+      </div>
+
+
+
+      <div class="fg">
+        <label data-i18n="settings_batch_size">Max mods per SteamCMD package</label>
+        <div class="frow">
+        <input type="number" id="c-max-package" min="1"  max="50"  value="15"
+           style="flex:1; max-width:160px; background:var(--bg3); border:1px solid var(--border);
+                  color:var(--text); border-radius:6px; padding:6px 11px; font-size:13px;
+                  text-align:center;">
+        </div>
+      </div>
+
+
+
+
+      <div class="cr">
+        <input type="checkbox" id="c-bk">
+        <label for="c-bk" data-i18n="settings_backup">ZIP backup before mod detection</label>
+      </div>
+
+      <div class="fg">
+        <label data-i18n="settings_language">Language</label>
+        <select id="lang-select" onchange="onLangChange(this.value)" style="max-width:120px"></select>
+      </div>
+
+      <div class="ib2" data-i18n="settings_quickstart" data-i18n-html></div>
+
+    </div></div>
+  </div>
+
+</div><!-- #main -->
+
+
+<!-- ═══════════════════════════════════════════════════════ MODALS -->
+
+<!-- Delete confirm -->
+<div class="mo" id="m-del">
+  <div class="md">
+    <h2 id="del-title">Confirm deletion</h2>
+    <div id="del-msg" style="font-size:13px;color:var(--text2);line-height:1.6"></div>
+    <div class="mdf">
+      <button class="btn btn-gh" id="del-cancel-btn">Cancel</button>
+      <button class="btn btn-r"  id="del-confirm-btn">Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add mod -->
+<div class="mo" id="m-add">
+  <div class="md">
+    <h2 data-i18n="modal_add_title">Add Mods</h2>
+    <div style="font-size:12px;color:var(--text2)" data-i18n="modal_add_hint">
+      Paste Workshop links, mod IDs or collection URLs.
+    </div>
+    <textarea id="add-ta" rows="5" data-i18n="modal_add_ph"
+      placeholder="https://steamcommunity.com/sharedfiles/filedetails/?id=818773962"></textarea>
+    <div id="add-prev" style="font-size:12px;color:var(--text3);min-height:16px"></div>
+    <div class="mdf">
+      <button class="btn btn-gh" onclick="closeM('m-add')" data-i18n="modal_add_cancel">Cancel</button>
+      <button class="btn btn-p"  onclick="addMods()"       data-i18n="modal_add_confirm">Add</button>
+    </div>
+  </div>
+</div>
+
+<!-- Guide modal -->
+<div class="mo" id="m-guide">
+  <div class="md-guide">
+    <h2>❓ <span data-i18n="guide_title">How to use Vanilla SteamCMD Expanded</span></h2>
+    <div class="guide-section">
+      <h3 data-i18n="guide_start_title">Quick Start</h3>
+      <div class="guide-steps">
+        <div class="guide-step"><div class="guide-step-num">1</div><div data-i18n="guide_start_1" data-i18n-html></div></div>
+        <div class="guide-step"><div class="guide-step-num">2</div><div data-i18n="guide_start_2" data-i18n-html></div></div>
+        <div class="guide-step"><div class="guide-step-num">3</div><div data-i18n="guide_start_3" data-i18n-html></div></div>
+      </div>
+    </div>
+    <div class="guide-section">
+      <h3 data-i18n="guide_buttons_title">Buttons</h3>
+      <div class="guide-steps">
+        <div class="guide-step"><div class="guide-step-num">🔄</div><div data-i18n="guide_btn_check" data-i18n-html></div></div>
+        <div class="guide-step"><div class="guide-step-num">⬇</div><div data-i18n="guide_btn_download" data-i18n-html></div></div>
+        <div class="guide-step"><div class="guide-step-num">🌐</div><div data-i18n="guide_btn_workshop" data-i18n-html></div></div>
+        <div class="guide-step"><div class="guide-step-num">＋</div><div data-i18n="guide_btn_add" data-i18n-html></div></div>
+        <div class="guide-step"><div class="guide-step-num">📤</div><div data-i18n="guide_btn_export" data-i18n-html></div></div>
+        <div class="guide-step"><div class="guide-step-num">📥</div><div data-i18n="guide_btn_import" data-i18n-html></div></div>
+      </div>
+    </div>
+    <div class="guide-section">
+      <h3 data-i18n="guide_tips_title">Tips</h3>
+      <div class="guide-tip" data-i18n="guide_tips" data-i18n-html></div>
+    </div>
+    <div class="mdf">
+      <button class="btn btn-p" onclick="closeM('m-guide')" data-i18n="guide_close">Got it!</button>
+    </div>
+  </div>
+</div>
+
+<!-- First-run / profile wizard -->
+<div class="wizard-overlay" id="m-wizard" style="display:none">
+  <div class="wizard-box">
+    <div class="wizard-head">
+      <div style="font-size:11px;color:var(--text3);letter-spacing:.4px;margin-bottom:4px" data-i18n="wizard_title">Welcome to Vanilla SteamCMD Expanded</div>
+      <div class="wizard-title" id="wz-title"></div>
+      <div class="wizard-step-lbl" id="wz-step-lbl"></div>
+      <div class="wizard-progress">
+        <div class="wizard-pip" id="wz-pip-1"></div>
+        <div class="wizard-pip" id="wz-pip-2"></div>
+        <div class="wizard-pip" id="wz-pip-3"></div>
+        <div class="wizard-pip" id="wz-pip-4"></div>
+        <div class="wizard-pip" id="wz-pip-5"></div>
+      </div>
+    </div>
+    <div class="wizard-body" id="wz-body"></div>
+    <div class="wizard-foot" id="wz-foot"></div>
+  </div>
+</div>
+
+<script src="js/i18n.js"></script>
+<script src="js/api.js"></script>
+<script src="js/profiles.js"></script>
+<script src="js/mods.js"></script>
+<script src="js/workshop.js"></script>
+<script src="js/trash.js"></script>
+<script src="js/settings.js"></script>
+<script src="js/main.js"></script>
+
+
+<!-- Compact / adaptive mode -->
+<script>
+(function () {
+  var HALF_W = Math.round(window.screen.width  / 2);
+  var HALF_H = Math.round(window.screen.height / 2);
+  var mainEl    = document.getElementById('main');
+  var isCompact = false;
+
+  function applyCompact() {
+    var w = window.innerWidth;
+    var h = window.innerHeight;
+    var want = (w <= HALF_W && h <= HALF_H);
+    if (!isCompact && want)  { isCompact = true;  document.body.classList.add('compact'); }
+    else if (isCompact && !want) { isCompact = false; document.body.classList.remove('compact'); }
+  }
+
+  window.addEventListener('resize', applyCompact);
+  applyCompact();
+})();
+</script>
+
+<!-- First-run / profile wizard -->
+<script>
+(function () {
+
+  var overlay  = document.getElementById('m-wizard');
+  var titleEl  = document.getElementById('wz-title');
+  var stepLbl  = document.getElementById('wz-step-lbl');
+  var bodyEl   = document.getElementById('wz-body');
+  var footEl   = document.getElementById('wz-foot');
+
+  var _mode       = 'full';
+  var STEPS_FULL    = 4;
+  var STEPS_PROFILE = 3;
+  var _editProfileId = '';
+
+  var step = 1;
+  var langFiles = [];
+  var selLang = '', selModsDir = '';
+  var selAppId = '294100', selGameName = '', selProfileName = '';
+  var scmdOption = 'download', selScmdDir = '', selScmdPath = '';
+  var doDetect = true, doBackup = true;
+
+  function totalSteps() { return (_mode === 'profile' || _mode === 'edit') ? STEPS_PROFILE : STEPS_FULL; }
+
+  var pips = [1,2,3,4,5].map(function(i){ return document.getElementById('wz-pip-'+i); });
+
+  function updatePips() {
+    var total = totalSteps();
+    pips.forEach(function(p, i) {
+      if (!p) return;
+      if (i >= total) { p.style.display = 'none'; return; }
+      p.style.display = '';
+      p.className = 'wizard-pip' + (i+1 < step ? ' done' : i+1 === step ? ' active' : '');
+    });
+    stepLbl.textContent = t('wizard_step', step, total);
+  }
+
+  function renderStep() {
+    updatePips();
+    if (_mode === 'profile' || _mode === 'edit') {
+      if      (step === 1) renderProfileStep1();
+      else if (step === 2) renderProfileStep2();
+      else if (step === 3) renderStepDone();
+    } else {
+      if      (step === 1) renderStep1();
+      else if (step === 2) renderStep2();
+      else if (step === 3) renderStep4();
+      else if (step === 4) renderStepDone();
+    }
+  }
+
+  function browseFolder(title, cb) {
+    api('/api/browse-folder?title=' + encodeURIComponent(title)).then(function(r){ if(r.path) cb(r.path); });
+  }
+
+  function makeFooter(opts) {
+    var html = '';
+    if (opts.skip)   html += '<button class="btn btn-gh wizard-foot-skip" id="wz-skip">'   + opts.skip   + '</button>';
+    if (opts.back)   html += '<button class="btn btn-gh btn-sm" id="wz-back">'              + opts.back   + '</button>';
+    if (opts.cancel) html += '<button class="btn btn-gh btn-sm" id="wz-cancel">'            + opts.cancel + '</button>';
+    if (opts.next)   html += '<button class="btn btn-p" id="wz-next">'                      + opts.next   + '</button>';
+    if (opts.finish) html += '<button class="btn btn-p" id="wz-finish">'                    + opts.finish + '</button>';
+    footEl.innerHTML = html;
+    if (opts.skip)   document.getElementById('wz-skip').onclick   = opts.onSkip   || function(){};
+    if (opts.back)   document.getElementById('wz-back').onclick   = opts.onBack   || function(){};
+    if (opts.cancel) document.getElementById('wz-cancel').onclick = opts.onCancel || function(){};
+    if (opts.next)   document.getElementById('wz-next').onclick   = opts.onNext   || function(){};
+    if (opts.finish) document.getElementById('wz-finish').onclick = opts.onFinish || function(){};
+  }
+
+  function inputRow(id, value, ph, browseLbl) {
+    return '<div class="frow">' +
+      '<input type="text" id="' + id + '" value="' + esc(value) + '" placeholder="' + esc(ph) + '" style="flex:1">' +
+      (browseLbl ? '<button class="btn btn-gh btn-sm" id="' + id + '-browse">' + browseLbl + '</button>' : '') +
+      '</div>';
+  }
+
+  var _appTimer = null;
+  function watchAppId(inputId, labelId) {
+    var inp = document.getElementById(inputId);
+    if (!inp) return;
+    inp.addEventListener('input', function() {
+      selAppId = this.value.trim();
+      clearTimeout(_appTimer);
+      var lbl = document.getElementById(labelId);
+      if (!lbl) return;
+      if (!selAppId.match(/^\d+$/)) { lbl.textContent = ''; return; }
+      lbl.textContent = t('wizard_appid_checking');
+      lbl.style.color = 'var(--text3)';
+      _appTimer = setTimeout(function() {
+        api('/api/profiles/app-info?app_id=' + selAppId).then(function(r) {
+          var l = document.getElementById(labelId);
+          if (!l) return;
+          if (r.ok && r.name) {
+            selGameName = r.name;
+            l.textContent = '\u2713 ' + r.name;
+            l.style.color = 'var(--green2)';
+            var ni = document.getElementById('wz-profile-name');
+            if (ni && !ni.value.trim()) { ni.value = r.name; selProfileName = r.name; }
+          } else {
+            selGameName = '';
+            l.textContent = t('wizard_appid_notfound');
+            l.style.color = 'var(--red2)';
+          }
+        });
+      }, 600);
+    });
+  }
+
+  // ── Full wizard steps ────────────────────────────────────────────────
+
+  function renderStep1() {
+    titleEl.textContent = t('wizard_lang_title');
+    var opts = langFiles.map(function(item) {
+      return '<label class="wizard-opt' + (item.file===selLang?' selected':'') + '">' +
+        '<input type="radio" name="wz-lang" value="' + item.file + '"' + (item.file===selLang?' checked':'') + '>' +
+        item.label + '</label>';
+    }).join('');
+    bodyEl.innerHTML = '<div class="wizard-subtitle">' + t('wizard_lang_sub') + '</div><div class="wizard-opts">' + opts + '</div>';
+    bodyEl.querySelectorAll('input[name=wz-lang]').forEach(function(r) {
+      r.addEventListener('change', function() {
+        selLang = r.value;
+        bodyEl.querySelectorAll('.wizard-opt').forEach(function(o) {
+          o.classList.toggle('selected', o.querySelector('input').value === selLang);
+        });
+        setLang(selLang).then(function(){ renderStep(); });
+      });
+    });
+    makeFooter({ next: t('wizard_btn_next'), onNext: function(){ step=2; renderStep(); } });
+  }
+
+  function renderStep2() {
+    titleEl.textContent = t('wizard_mods_title');
+    bodyEl.innerHTML =
+      '<div class="wizard-subtitle">' + t('wizard_mods_sub') + '</div>' +
+      inputRow('wz-mods', selModsDir, t('wizard_mods_ph'), t('wizard_mods_browse')) +
+      '<label class="cr" style="gap:8px;font-size:13px;margin-top:4px">' +
+        '<input type="checkbox" id="wz-detect"' + (doDetect?' checked':'') + '>' + t('wizard_mods_detect') +
+      '</label>' +
+      '<label class="cr" style="gap:8px;font-size:13px" id="wz-backup-row">' +
+        '<input type="checkbox" id="wz-backup"' + (doBackup?' checked':'') + '>' + t('wizard_mods_backup') +
+      '</label>';
+    document.getElementById('wz-mods').oninput = function(){ selModsDir = this.value.trim(); };
+    document.getElementById('wz-mods-browse').onclick = function() {
+      browseFolder(t('wizard_mods_title'), function(p){ selModsDir=p; document.getElementById('wz-mods').value=p; });
+    };
+    document.getElementById('wz-detect').onchange = function() {
+      doDetect = this.checked;
+      var row = document.getElementById('wz-backup-row');
+      row.style.opacity = doDetect?'1':'.4'; row.style.pointerEvents = doDetect?'':'none';
+    };
+    document.getElementById('wz-backup').onchange = function(){ doBackup = this.checked; };
+    makeFooter({
+      skip: t('wizard_btn_skip'), onSkip: function(){ step=3; renderStep(); },
+      back: t('wizard_btn_back'), onBack: function(){ step=1; renderStep(); },
+      next: t('wizard_btn_next'), onNext: function(){
+        selModsDir = document.getElementById('wz-mods').value.trim();
+        doDetect   = document.getElementById('wz-detect').checked;
+        doBackup   = document.getElementById('wz-backup').checked;
+        step=3; renderStep();
+      }
+    });
+  }
+
+  function renderStep4() {
+    titleEl.textContent = t('wizard_scmd_title');
+    bodyEl.innerHTML =
+      '<div class="wizard-subtitle">' + t('wizard_scmd_sub') + '</div>' +
+      '<div class="wizard-opts">' +
+        '<label class="wizard-opt' + (scmdOption==='download'?' selected':'') + '">' +
+          '<input type="radio" name="wz-scmd" value="download"' + (scmdOption==='download'?' checked':'') + '>' +
+          t('wizard_scmd_opt_dl') + '</label>' +
+        '<label class="wizard-opt' + (scmdOption==='pick'?' selected':'') + '">' +
+          '<input type="radio" name="wz-scmd" value="pick"' + (scmdOption==='pick'?' checked':'') + '>' +
+          t('wizard_scmd_opt_pick') + '</label>' +
+      '</div>' +
+      '<div id="wz-dl-row" style="display:' + (scmdOption==='download'?'flex':'none') + ';flex-direction:column;gap:8px">' +
+        '<label style="font-size:11px;color:var(--text2);font-weight:600;text-transform:uppercase;letter-spacing:.4px">' + t('wizard_scmd_dir_label') + '</label>' +
+        inputRow('wz-scmd-dir', selScmdDir, t('wizard_scmd_dir_ph'), t('wizard_scmd_dir_browse')) +
+      '</div>' +
+      '<div id="wz-pick-row" style="display:' + (scmdOption==='pick'?'flex':'none') + ';flex-direction:column;gap:8px">' +
+        '<div id="wz-pick-status" style="font-size:12px;color:var(--text2)">' + (selScmdPath?'\u2713 '+selScmdPath:'') + '</div>' +
+        '<button class="btn btn-gh btn-sm" id="wz-pick-btn">' + t('wizard_scmd_opt_pick') + '</button>' +
+      '</div>';
+
+    bodyEl.querySelectorAll('input[name=wz-scmd]').forEach(function(r) {
+      r.addEventListener('change', function() {
+        scmdOption = r.value;
+        bodyEl.querySelectorAll('.wizard-opt').forEach(function(o){
+          o.classList.toggle('selected', o.querySelector('input').value===scmdOption);
+        });
+        document.getElementById('wz-dl-row').style.display   = scmdOption==='download'?'flex':'none';
+        document.getElementById('wz-pick-row').style.display = scmdOption==='pick'?'flex':'none';
+      });
+    });
+    var di = document.getElementById('wz-scmd-dir');
+    if (di) {
+      di.oninput = function(){ selScmdDir = this.value.trim(); };
+      document.getElementById('wz-scmd-dir-browse').onclick = function(){
+        browseFolder(t('wizard_scmd_dir_label'), function(p){ selScmdDir=p; di.value=p; });
+      };
+    }
+    var pb = document.getElementById('wz-pick-btn');
+    if (pb) pb.onclick = function(){
+      api('/api/browse-file?title=steamcmd.exe').then(function(r){
+        if (r.path) { selScmdPath=r.path; document.getElementById('wz-pick-status').textContent='\u2713 '+r.path; }
+      });
+    };
+    makeFooter({
+    skip: t('wizard_btn_skip'),
+    onSkip: function() { scmdOption = 'skip'; doFinish(); },
+    back: t('wizard_btn_back'), onBack: function(){ step=2; renderStep(); },
+    finish: t('wizard_btn_finish'), onFinish: doFinish
+  });
+  }
+
+  function renderStep4Waiting() {
+    titleEl.textContent = t('wizard_scmd_title');
+    bodyEl.innerHTML =
+      '<div class="wizard-subtitle">' + t('wizard_scmd_downloading') + '</div>' +
+      '<div class="wizard-subtitle" style="color:var(--text3)">' + t('wizard_scmd_wait') + '</div>' +
+      '<div style="display:flex;align-items:center;gap:10px;margin-top:8px">' +
+        '<div style="width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite"></div>' +
+      '</div>';
+    footEl.innerHTML = '';
+  }
+
+  function renderStepDone() {
+    titleEl.textContent = t('wizard_done_title');
+    stepLbl.textContent = '';
+    pips.forEach(function(p){ if(p && p.style.display!=='none') p.className='wizard-pip done'; });
+    bodyEl.innerHTML = '<div class="wizard-subtitle" style="font-size:14px;color:var(--text)">' + t('wizard_done_sub') + '</div>';
+    if (_mode === 'full') {
+      footEl.innerHTML =
+        '<button class="btn btn-gh" id="wz-done-guide">'    + t('wizard_done_guide')    + '</button>' +
+        '<button class="btn btn-gh" id="wz-done-settings">' + t('wizard_done_settings') + '</button>' +
+        '<button class="btn btn-p"  id="wz-done-close">'    + t('wizard_done_close')    + '</button>';
+      document.getElementById('wz-done-guide').onclick    = function(){ finish(); openM('m-guide'); };
+      document.getElementById('wz-done-settings').onclick = function(){ finish(); document.querySelector('[data-page="settings"]').click(); };
+      document.getElementById('wz-done-close').onclick    = finish;
+    } else {
+      footEl.innerHTML =
+        '<button class="btn btn-r btn-sm" id="wz-done-del">' + t('btn_delete') + '</button>' +
+        '<span style="flex:1"></span>' +
+        '<button class="btn btn-p" id="wz-done-close">' + t('wizard_done_close') + '</button>';
+      document.getElementById('wz-done-close').onclick = finish;
+      document.getElementById('wz-done-del').onclick = function() {
+        if (!confirm(t('confirm_delete_one'))) return;
+        api('/api/profiles/delete', { id: _editProfileId }).then(function(){
+          finish();
+          if (typeof loadProfiles === 'function') loadProfiles();
+        });
+      };
+    }
+  }
+
+  // ── Profile wizard steps ─────────────────────────────────────────────────
+
+  function renderProfileStep1() {
+    titleEl.textContent = t('wizard_profile_title');
+    bodyEl.innerHTML =
+      '<div class="wizard-subtitle">' + t('wizard_profile_sub') + '</div>' +
+      '<div class="fg" style="gap:5px">' +
+        '<label style="font-size:11px;color:var(--text2);font-weight:600;text-transform:uppercase;letter-spacing:.4px">' + t('wizard_profile_name_label') + '</label>' +
+        '<input type="text" id="wz-profile-name" value="' + esc(selProfileName) + '" placeholder="' + t('wizard_profile_name_ph') + '">' +
+      '</div>' +
+      '<div class="fg" style="gap:5px">' +
+        '<label style="font-size:11px;color:var(--text2);font-weight:600;text-transform:uppercase;letter-spacing:.4px">' + t('wizard_appid_label') + '</label>' +
+        '<input type="text" id="wz-appid" value="' + esc(selAppId) + '" placeholder="294100">' +
+        '<div id="wz-appid-status" style="font-size:11px;min-height:16px;margin-top:2px"></div>' +
+      '</div>';
+    document.getElementById('wz-profile-name').oninput = function(){ selProfileName = this.value.trim(); };
+    document.getElementById('wz-appid').oninput = function(){ selAppId = this.value.trim(); };
+    watchAppId('wz-appid', 'wz-appid-status');
+    if (selAppId) setTimeout(function(){
+      var i = document.getElementById('wz-appid'); if(i) i.dispatchEvent(new Event('input'));
+    }, 100);
+    makeFooter({
+      cancel: t('wizard_btn_cancel'), onCancel: function(){ overlay.style.display='none'; },
+      next: t('wizard_btn_next'), onNext: function(){
+        selProfileName = document.getElementById('wz-profile-name').value.trim();
+        selAppId       = document.getElementById('wz-appid').value.trim();
+        if (!selProfileName || !selAppId) return;
+        step=2; renderStep();
+      }
+    });
+  }
+
+  function renderProfileStep2() {
+    titleEl.textContent = t('wizard_mods_title');
+    bodyEl.innerHTML =
+      '<div class="wizard-subtitle">' + t('wizard_mods_sub') + '</div>' +
+      inputRow('wz-mods', selModsDir, t('wizard_mods_ph'), t('wizard_mods_browse'));
+    document.getElementById('wz-mods').oninput = function(){ selModsDir = this.value.trim(); };
+    document.getElementById('wz-mods-browse').onclick = function(){
+      browseFolder(t('wizard_mods_title'), function(p){ selModsDir=p; document.getElementById('wz-mods').value=p; });
+    };
+    makeFooter({
+      cancel: t('wizard_btn_cancel'), onCancel: function(){ overlay.style.display='none'; },
+      back: t('wizard_btn_back'),   onBack: function(){ step=1; renderStep(); },
+      finish: t('wizard_btn_finish'), onFinish: function(){
+        selModsDir = document.getElementById('wz-mods').value.trim();
+        doProfileFinish();
+      }
+    });
+  }
+
+  // ── Finish ───────────────────────────────────────────────────────────────
+
+  function finish() {
+    overlay.style.display = 'none';
+  }
+
+  function afterComplete() {
+  var bk = document.getElementById('c-bk');
+  if (bk) bk.checked = doBackup;
+  if (selModsDir && doDetect) {
+    api('/api/mods/detect', {}).then(function(){ pollUntilDone(loadMods); });
+  }
+  if (typeof loadProfiles === 'function') loadProfiles();
+  setTimeout(checkWarnings, 800);
+}
+
+  function doFinish() {
+  var payload = {
+    mods_dir: selModsDir,
+    language: selLang ? selLang.replace(/\.js$/i,'') : '',
+    require_backup: doBackup,
+    profile_name: selProfileName || selGameName || 'RimWorld',
+    app_id: selAppId,
+    profile_id: (typeof _activeId !== 'undefined' ? _activeId : ''),
+  };
+
+    if (scmdOption === 'pick' && selScmdPath) {
+    payload.steamcmd_path = selScmdPath;
+    api('/api/setup/complete', payload).then(function(){
+      afterComplete();
+      step=4;
+      renderStep();
+    });
+    return;
+  }
+
+  if (scmdOption === 'download') {
+    payload.download_steamcmd = true;
+    payload.steamcmd_dir = selScmdDir || '';
+    api('/api/setup/complete', payload).then(function(){
+      afterComplete();
+      renderStep4Waiting();
+      pollForSteamcmd();
+    });
+    return;
+  }
+
+  // Если scmdOption === 'skip' или что-то ещё — просто сохраняем базовые настройки без SteamCMD
+  api('/api/setup/complete', payload).then(function(){
+    afterComplete();
+    step=4;
+    renderStep();
+  });
+}
+
+  function doProfileFinish() {
+    if (_mode === 'edit' && _editProfileId) {
+      api('/api/profiles/update', { id: _editProfileId, name: selProfileName, app_id: selAppId, mods_dir: selModsDir })
+        .then(function(){
+          if (typeof loadProfiles === 'function') loadProfiles();
+          step=3; renderStep();
+        });
+    } else {
+      api('/api/profiles', { name: selProfileName, app_id: selAppId, mods_dir: selModsDir })
+        .then(function(r){
+          if (r.ok && typeof loadProfiles === 'function') loadProfiles(r.profile.id);
+          step=3; renderStep();
+        });
+    }
+  }
+
+  function pollForSteamcmd() {
+    var timer = setInterval(function(){
+      api('/api/setup/steamcmd-ready').then(function(r){
+        if (!r.busy){ clearInterval(timer); step=4; renderStep(); }
+      }).catch(function(){});
+    }, 1000);
+  }
+
+  // ── Lang ─────────────────────────────────────────────────────────────────
+
+  async function ensureLangFiles() {
+    if (langFiles.length) return;
+    try { langFiles = await fetch('/api/lang-files').then(function(r){ return r.json(); }); }
+    catch(e){ langFiles = []; }
+    var cur = typeof getLang==='function' ? getLang() : 'en';
+    var m = langFiles.find(function(f){ return f.file.replace(/\.js$/i,'').toLowerCase()===cur.toLowerCase(); });
+    selLang = m ? m.file : (langFiles[0] ? langFiles[0].file : 'en.js');
+  }
+
+  // ── Public ───────────────────────────────────────────────────────────────
+
+  window.startWizard = async function(mode, profileData) {
+    _mode = mode || 'full';
+    var status = await api('/api/setup/status');
+    if (_mode === 'edit' && profileData) {
+      _editProfileId = profileData.id;
+      selProfileName = profileData.name  || '';
+      selAppId       = profileData.app_id || '294100';
+      selModsDir     = profileData.mods_dir || '';
+      selGameName    = '';
+      step = 1;
+    } else if (_mode === 'profile') {
+      _editProfileId = '';
+      selAppId='294100'; selGameName=''; selProfileName=''; selModsDir=''; step=1;
+    } else {
+      selScmdDir = status.default_dirs.steamcmd_dir;
+      await ensureLangFiles(); step=1;
+    }
+    renderStep(); overlay.style.display='flex';
+  };
+
+  async function initWizard() {
+    var status = await api('/api/setup/status');
+    if (!status.first_run) return;
+    _mode = 'full';
+    selScmdDir = status.default_dirs.steamcmd_dir;
+    await ensureLangFiles();
+    step=1; renderStep(); overlay.style.display='flex';
+  }
+
+  window.addEventListener('rimmod:ready', initWizard);
+
+})();
+</script>
+
+
+<!-- Warning banner logic -->
+<script>
+async function checkWarnings() {
+  try {
+    const r = await api('/api/setup/steamcmd-ready');
+    const banner = document.getElementById('warn-banner');
+    const msgEl  = document.getElementById('warn-msg');
+
+    if (!banner || !msgEl) return;
+
+    if (r.ready) {
+      banner.classList.remove('visible');
+    } else {
+      msgEl.textContent = t('warn_no_steamcmd');
+      banner.classList.add('visible');
+    }
+  } catch (e) {
+    console.warn('checkWarnings failed', e);
+  }
+}
+</script>
+
+<!-- Profile edit/create modal -->
+<div class="mo" id="m-profile">
+  <div class="md md-profile">
+    <h2 id="m-profile-title">Edit Profile</h2>
+    <div class="fg" style="gap:5px">
+      <label style="font-size:11px;color:var(--text2);font-weight:600;text-transform:uppercase;letter-spacing:.4px" data-i18n="wizard_profile_name_label">Profile name</label>
+      <input type="text" id="mp-name" placeholder="e.g. RimWorld">
+    </div>
+    <div class="fg" style="gap:5px">
+      <label style="font-size:11px;color:var(--text2);font-weight:600;text-transform:uppercase;letter-spacing:.4px" data-i18n="wizard_appid_label">Steam App ID</label><span id="mp-appid-label-hint" style="font-size:11px;color:var(--text2);font-weight:400;text-transform:none;margin-left:8px"></span>
+      <input type="text" id="mp-appid" placeholder="294100">
+      <div id="mp-appid-status" style="font-size:11px;min-height:16px;margin-top:2px"></div>
+    </div>
+    <div class="fg" style="gap:5px">
+      <label style="font-size:11px;color:var(--text2);font-weight:600;text-transform:uppercase;letter-spacing:.4px" data-i18n="settings_modsdir">Mods folder</label>
+      <div class="frow">
+        <input type="text" id="mp-modsdir" style="flex:1">
+        <button class="btn btn-gh btn-sm" id="mp-modsdir-browse" data-i18n="settings_browse">Browse…</button>
+      </div>
+    </div>
+    <div class="mdf" style="justify-content:space-between">
+      <button class="btn btn-r btn-sm" id="mp-delete-btn" data-i18n="btn_delete">Delete</button>
+      <div style="display:flex;gap:7px;align-items:center">
+        <button class="btn btn-pu btn-sm" id="mp-import-btn" title="Create profile from mod list file">📥 <span data-i18n="profile_import_btn">Import from file</span></button>
+        <button class="btn btn-gh" onclick="closeM('m-profile')" data-i18n="modal_add_cancel">Cancel</button>
+        <button class="btn btn-p" id="mp-save-btn" data-i18n="btn_save">Save</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
