@@ -94,8 +94,7 @@ project/
 │       ├── settings.js     # Auto-save settings
 │       └── main.js         # Init, navigation
 ├── lang/
-│   ├── en.js               # window.RIMMOD_LOCALE = { ... }
-│   └── ru.js
+│   └── lots of localisations               # window.RIMMOD_LOCALE = { ... }
 ├── web_app.py              # Flask app, blueprint registration
 ├── workshop_window.py      # Standalone Workshop browser window
 ├── hook_dll_fix.py         # PyInstaller DLL fix
@@ -224,8 +223,7 @@ build.bat
 │       ├── settings.js     # Автосохранение настроек
 │       └── main.js         # Инициализация, навигация
 ├── lang/
-│   ├── en.js               # window.RIMMOD_LOCALE = { ... }
-│   └── ru.js
+│   └── много-много локализаций
 ├── web_app.py              # Flask app, регистрация blueprints
 ├── workshop_window.py      # Отдельное окно Workshop
 ├── hook_dll_fix.py         # PyInstaller DLL fix
