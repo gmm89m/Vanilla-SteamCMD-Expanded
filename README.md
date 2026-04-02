@@ -1,8 +1,8 @@
 # VSE — Vanilla SteamCMD Expanded
 
-> A mod download utility for RimWorld with SteamCMD integration, multi-profile support, and a web-based interface.
+> A mod download utility for RimWorld with SteamCMD integration, multi-profile support, and a web-based interface. (Please submit all requsts and bug reports in the discord)
 >
-> Утилита для скачивания модов RimWorld с интеграцией SteamCMD, поддержкой профилей и веб-интерфейсом.
+> Утилита для скачивания модов RimWorld с интеграцией SteamCMD, поддержкой профилей и веб-интерфейсом. (Позязя, все пожелания и баг репорты - в дискорд)
 
 ![Python](https://img.shields.io/badge/Python-3.8+-blue.svg)
 ![Flask](https://img.shields.io/badge/Flask-3.x-green.svg)
