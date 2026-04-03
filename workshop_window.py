@@ -1,7 +1,3 @@
-"""
-RimMod Workshop Browser — максимально простая версия для диагностики
-"""
-
 import os
 import sys
 
@@ -234,7 +230,7 @@ class Api:
 _url = _get_workshop_url()
 
 w = webview.create_window(
-    title="SCMDMM - Steam Workshop",
+    title="VSE - Steam Workshop",
     url=_url,
     width=1280,
     height=860,
