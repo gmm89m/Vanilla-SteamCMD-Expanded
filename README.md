@@ -32,10 +32,10 @@
 - Workshop Browser — a separate companion window for browsing and adding mods without leaving the app
 
 ### Installation 
-Download VSE_v1.0_release.rar, the VSE.exe is there, and you are good to go. 
-https://github.com/gmm89m/Vanilla-SteamCMD-Expanded/releases/tag/VSE
+Download latest release (.rar archive), the VSE.exe is there, and you are good to go. \
+https://github.com/gmm89m/Vanilla-SteamCMD-Expanded/releases
 
-### Installation (Via Source code)
+## Installation (Via Source code)
 
 **Prerequisites:** Python 3.8+, SteamCMD installed and accessible.
 
@@ -168,10 +168,10 @@ project/
 - Workshop Browser — отдельное окно для просмотра и добавления модов прямо из интерфейса
 
 ### Установка 
-Скачай VSE_v1.0_release.rar, VSE.exe там, и можешь пользоваться. 
-https://github.com/gmm89m/Vanilla-SteamCMD-Expanded/releases/tag/VSE
+Скачай архив с последней версией (.rar), VSE.exe там, и можешь пользоваться. \
+https://github.com/gmm89m/Vanilla-SteamCMD-Expanded/releases
 
-### Установка (Через исходники)
+## Установка (Через исходники)
 
 **Требования:** Python 3.8+, установленный SteamCMD.
 
