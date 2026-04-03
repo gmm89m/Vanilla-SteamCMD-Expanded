@@ -32,6 +32,29 @@ BAR_JS = r"""
 (function(){
   if (document.getElementById('_rm_bar')) return;
 
+    (function() {
+    const originalOpen = window.open;
+    window.open = function(url, name, features) {
+      if (url && typeof url === 'string') {
+        location.href = url;
+      }
+      return null; 
+    };
+
+    document.addEventListener('click', function(e) {
+      let target = e.target.closest('a');
+      if (target && target.href) {
+        const href = target.href;
+        const targetAttr = target.getAttribute('target');
+        if (targetAttr === '_blank' || e.ctrlKey || e.metaKey || e.shiftKey) {
+          e.preventDefault();
+          e.stopPropagation();
+          location.href = href;
+        }
+      }
+    }, true); 
+  })();
+
   var bar = document.createElement('div');
   bar.id = '_rm_bar';
   bar.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:2147483647;display:flex;align-items:center;gap:6px;padding:7px 10px;background:rgba(13,13,20,0.97);backdrop-filter:blur(8px);border-bottom:1px solid #2a2a40;font-family:Segoe UI,system-ui,sans-serif;';
